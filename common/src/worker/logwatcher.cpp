@@ -6,41 +6,43 @@
 #endif
 
 static const QStringList START_LINES {
-  "Izaro: Ascend with precision.",
-  "Izaro: The Goddess is watching.",
-  "Izaro: Justice will prevail.",
+  "伊澤洛: 精確的上升。",
+  "伊澤洛: 女神在看著。",
+  "伊澤洛: 正義將會獲得伸張。",
 };
 static const QStringList FINISH_LINES {
-  "Izaro: I die for the Empire!",
-  "Izaro: Delight in your gilded dungeon, ascendant.",
-  "Izaro: Your destination is more dangerous than the journey, ascendant.",
-  "Izaro: Triumphant at last!",
-  "Izaro: You are free!",
-  "Izaro: The trap of tyranny is inescapable.",
+  "伊澤洛: 我為了帝國而死！",
+  "伊澤洛: 在鍍金的地牢中感到喜悅吧，昇華者。",
+  "伊澤洛: 終點比你的旅途更加危險，昇華者。",
+  "伊澤洛: 終於勝利了！",
+  "伊澤洛: 你自由了！",
+  "伊澤洛: 暴政的陷阱是不可避免的。",
 };
 static const QStringList IZARO_BATTLE_START_LINES {
-  "Izaro: Complex machinations converge to a single act of power.",
-  "Izaro: Slowness lends strength to one\'s enemies.",
-  "Izaro: When one defiles the effigy, one defiles the emperor.",
-  "Izaro: The essence of an empire must be shared equally amongst all of its citizens.",
-  "Izaro: It is the sovereign who empowers the sceptre. Not the other way round.",
-  "Izaro: Some things that slumber should never be awoken.",
-  "Izaro: An emperor is only as efficient as those he commands.",
-  "Izaro: The emperor beckons and the world attends.",
+  "伊澤洛: 各種複雜的詭計結合為單一的一種力量。",
+  "伊澤洛: 緩慢會將力量借給敵人。",
+  "伊澤洛: 汙穢雕像等同於汙穢帝王。",
+  "伊澤洛: 帝國的精華必須讓所有人民平均享用。",
+  "伊澤洛: 是霸主賦予權杖力量，而不是相反。",
+  "伊澤洛: 有些在沉睡的東西不該被喚醒。",
+  "伊澤洛: 帝王的效率取決於他的部屬。",
+  "伊澤洛: 帝王招手而世界來參加。",
 };
 static const QStringList SECTION_FINISH_LINES {
-  "Izaro: By the Goddess! What ambition!",
-  "Izaro: Such resilience!",
-  "Izaro: You are inexhaustible!",
-  "Izaro: You were born for this!",
+  "伊澤洛: 女神啊！如此的野心！",
+  "伊澤洛: 這樣的韌性！",
+  "伊澤洛: 你真是難纏！",
+  "伊澤洛: 你是為此而生！",
 };
 static const QStringList PORTAL_SPAWN_LINES {
   ": A portal to Izaro appears."
 };
 static const QStringList LAB_ROOM_PREFIX {"Estate", "Domain", "Basilica", "Mansion", "Sepulchre", "Sanitorium"};
+static const QStringList LAB_ROOM_PREFIX_TW {"莊園", "領地", "教堂", "宅邸", "陰墓", "安養"};
 static const QStringList LAB_ROOM_SUFFIX {"Walkways", "Path", "Crossing", "Annex", "Halls", "Passage", "Enclosure", "Atrium"};
+static const QStringList LAB_ROOM_SUFFIX_TW {"走道", "通路", "岔點", "附館", "殿堂", "通道", "勢力", "庭院"};
 static const QRegularExpression LOG_REGEX {"^\\d+/\\d+/\\d+ \\d+:\\d+:\\d+.*?\\[.*?(\\d+)\\] (.*)$"};
-static const QRegularExpression ROOM_CHANGE_REGEX {"^: You have entered (.*?)\\.$"};
+static const QRegularExpression ROOM_CHANGE_REGEX {"^: 你已進入：(.*?)。$"};
 
 LogWatcher::LogWatcher(ApplicationModel* model)
 {
@@ -108,17 +110,32 @@ void LogWatcher::parseLine(const QString line)
 
     } else if (roomChangeMatch.hasMatch()) {
       auto roomName = roomChangeMatch.captured(1);
-      auto affixes = roomName.split(' ');
+      QStringList affixes;
+      if (roomName.length() == 4) {
+          affixes << roomName.mid(0, 2);
+          affixes << roomName.mid(2, 2);
+      }
 
-      if (roomName == "Aspirants\' Plaza") {
+      if (roomName == "試煉者廣場") {
         setActiveClient(clientId);
         emit plazaEntered();
 
-      } else if (roomName == "Aspirant\'s Trial" ||
-          (affixes.size() == 2 && LAB_ROOM_PREFIX.contains(affixes[0]) && LAB_ROOM_SUFFIX.contains(affixes[1]))) {
-        if (isLogFromValidClient(clientId))
-          emit roomChanged(roomName);
+      } else if (roomName == "昇華試煉" ||
+          (affixes.size() == 2 && LAB_ROOM_PREFIX_TW.contains(affixes[0]) && LAB_ROOM_SUFFIX_TW.contains(affixes[1]))) {
+        if (isLogFromValidClient(clientId)) {
+          if (roomName == "昇華試煉") {
+            roomName = QString("Aspirant\'s Trial");
+          } else {
+              int preIndex = LAB_ROOM_PREFIX_TW.indexOf(affixes[0]);
+              int sufIndex = LAB_ROOM_SUFFIX_TW.indexOf(affixes[1]);
+              roomName = LAB_ROOM_PREFIX[preIndex] + " " + LAB_ROOM_SUFFIX[sufIndex];
+          }
 
+          emit roomChanged(roomName);
+        }
+
+      } else if (roomName == "教堂聖殿") {
+          emit roomChanged(QString("Basilica Halls"));
       } else {
         if (isLogFromValidClient(clientId))
           emit labExit();
