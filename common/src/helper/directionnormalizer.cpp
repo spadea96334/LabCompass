@@ -35,7 +35,11 @@ RoomConnections DirectionNormalizer::normalize(const RoomConnections& original, 
       unusedList.removeOne(i.first);
 
     const auto& unusedDirection = unusedList[0];
-    const auto& unusedRoom = breakdown.unknownDirectionRooms[0];
+    auto unusedRoom = QString("");
+    if (breakdown.unknownDirectionRooms.length() != 0) {
+        unusedRoom = breakdown.unknownDirectionRooms[0];
+    }
+
 
     breakdown.unknownDirectionRooms.clear();
     breakdown.regularDirectionRooms.append({unusedDirection, unusedRoom});
